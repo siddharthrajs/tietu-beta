@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 const Love = () => {
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<unknown[]>([]);
   const [gender, setGender] = useState<'all' | 'male' | 'female'>('all');
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const Love = () => {
       if (gender !== 'all') {
         query = query.eq('gender', gender);
       }
-      const { data, error } = await query;
+      const { data } = await query;
       if (data) setProfiles(data);
     };
     fetchProfiles();
@@ -47,7 +47,7 @@ const Love = () => {
         </Button>
       </div>
       <div className="flex flex-wrap gap-6 p-6 justify-center">
-        {profiles.map((profile: any, idx: number) => (
+        {profiles.map((profile: unknown, idx: number) => (
           <ProfileCard
             key={profile.id || idx}
             user={{

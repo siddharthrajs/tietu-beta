@@ -13,12 +13,12 @@ type ProfileCardProps = {
     year: string;
     handle?: string;
     email: string;
+    is_verified: boolean;
   };
   className?: string;
 };
 
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mars, Venus } from "lucide-react";
@@ -26,7 +26,12 @@ import { createClient } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-
+import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 /**
  * Note: To prevent card overlap, render ProfileCard in a parent with flex-wrap or grid and a gap, e.g.:
  * <div className="flex flex-wrap gap-4"> ... </div>
@@ -174,9 +179,17 @@ export function ProfileCard({ user, className = "" }: ProfileCardProps) {
         </Avatar>
         <span className="text-lg font-bold text-foreground truncate max-w-[8rem] flex items-center">
           {user.username}
-          {user.email && user.email.endsWith("@thapar.edu") && (
-            <img src="/verify.png" alt="Verified" className="ml-1 align-middle inline-block" />
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {user.is_verified && (
+                <img src="/verify.png" alt="Verified" className="w-5 h-5 ml-1 align-middle inline-block" />
+              )}
+            </TooltipTrigger>
+            <TooltipContent>
+              Verfied Thapar Student
+            </TooltipContent>
+          </Tooltip>
+
         </span>
       </div>
       {/* Bio */}

@@ -48,7 +48,7 @@ export default async function ProfilePage({ params }: { params: { handle: string
               {/* Verified badge example */}
               {profile.is_verified && (
                 <Badge variant="secondary" className="flex items-center gap-1 px-2 py-0.5 text-xs font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500" /> Get verified
+                  <CheckCircle2 className="w-4 h-4 text-blue-500" /> Verfied TIET Student
                 </Badge>
               )}
             </div>

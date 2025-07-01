@@ -4,7 +4,7 @@ import { ProfileCard } from '@/components/profile-card';
 import { createClient } from '@/lib/client';
 
 const Home = () => {
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,8 +22,12 @@ const Home = () => {
           .neq('id', user.id); // Exclude self
         if (fetchError) throw fetchError;
         setProfiles(data || []);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An error occurred');
+        }
       } finally {
         setLoading(false);
       }
@@ -36,17 +40,23 @@ const Home = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6">
-      {profiles.map((profile: any) => (
+      {profiles.map((profile: unknown) => (
         <ProfileCard
           key={profile.id}
           user={{
             id: profile.id,
             avatarUrl: profile.avatar || '/avatar.png',
             username: profile.handle || 'unknown',
+            name: profile.name || '',
             bio: profile.bio || '',
             height: profile.height || '',
             branch: profile.branch || '',
             interests: Array.isArray(profile.interests) ? profile.interests : (profile.interests ? profile.interests.split(',') : []),
+            gender: profile.gender || '',
+            year: profile.year || '',
+            email: profile.email || '',
+            is_verified: !!profile.is_verified,
+            handle: profile.handle || '',
           }}
         />
       ))}

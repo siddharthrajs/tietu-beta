@@ -10,7 +10,6 @@ const Connections = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter();
-  const [profiles, setProfiles] = useState<unknown[]>([])
 
   useEffect(() => {
     const fetchConnections = async () => {
@@ -28,14 +27,20 @@ const Connections = () => {
           .eq('type', 'accepted')
         if (connError) throw connError
         // Get the other user ids
-        const otherUserIds = conns.map((c: any) => c.user1_id === user.id ? c.user2_id : c.user1_id)
+        const otherUserIds = conns.map((c: unknown) => {
+          if (typeof c === 'object' && c !== null && 'user1_id' in c && 'user2_id' in c) {
+            // @ts-ignore
+            return c.user1_id === user.id ? c.user2_id : c.user1_id;
+          }
+          return null;
+        });
         let profiles: unknown[] = []
         if (otherUserIds.length > 0) {
           const { data } = await supabase.from('profiles').select('id, handle, name, avatar').in('id', otherUserIds)
           profiles = data || []
         }
         // Attach profile info
-        setConnections(conns.map((conn: any) => ({
+        setConnections(conns.map((conn: unknown) => ({
           ...conn,
           user: profiles.find((p) => p.id === (conn.user1_id === user.id ? conn.user2_id : conn.user1_id))
         })))
@@ -64,7 +69,7 @@ const Connections = () => {
         <div className="text-muted-foreground">No connections yet.</div>
       ) : (
         <div className="flex flex-col gap-4">
-          {connections.map((conn) => (
+          {connections.map((conn: unknown, idx: number) => (
             <div key={conn.id} className="flex items-center gap-4 bg-muted/40 rounded-lg p-4 cursor-pointer hover:bg-muted" onClick={() => router.push(`/protected/profile/${conn.user?.handle}`)}>
               <Avatar className="size-12">
                 <AvatarImage src={conn.user?.avatar || '/avatar.png'} alt={conn.user?.handle} />

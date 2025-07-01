@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { RealtimeChat } from '@/components/realtime-chat'
 import { createClient } from '@/lib/client'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Card } from '@/components/ui/card'
 
 interface ConnectedUser {
   id: string
