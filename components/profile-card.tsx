@@ -9,26 +9,37 @@ type ProfileCardProps = {
     height: string;
     branch: string;
     interests: string[];
+    gender: string;
+    year: string;
+    handle?: string;
+    email: string;
   };
+  className?: string;
 };
 
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bookmark, MessageCircle } from "lucide-react";
+import { Bookmark, MessageCircle, Mars, Venus } from "lucide-react";
 import { createClient } from "@/lib/client";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useOutsideClick } from "@/hooks/use-outside-click";
 import { useRouter } from "next/navigation";
+import { Separator } from "@/components/ui/separator";
 
-export function ProfileCard({ user }: ProfileCardProps) {
+/**
+ * Note: To prevent card overlap, render ProfileCard in a parent with flex-wrap or grid and a gap, e.g.:
+ * <div className="flex flex-wrap gap-4"> ... </div>
+ */
+export function ProfileCard({ user, className = "" }: ProfileCardProps) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const id = useId();
+  const [genderHover, setGenderHover] = useState(false);
+  const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'connected' | 'loading'>("loading");
+  const [connId, setConnId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -46,13 +57,6 @@ export function ProfileCard({ user }: ProfileCardProps) {
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [modalOpen]);
-
-  useOutsideClick(ref, () => setModalOpen(false));
-
-  const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'connected' | 'loading'>("loading");
-  const [connId, setConnId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -159,95 +163,95 @@ export function ProfileCard({ user }: ProfileCardProps) {
     }
   };
 
+  // Gender icon logic
+  const gender = (user.gender || '').toLowerCase();
+  const genderIcon = gender === 'female' ? <Venus className="w-6 h-6" /> : <Mars className="w-6 h-6" />;
+  const genderText = gender === 'female' ? 'Female' : 'Male';
+
   // Collapsed card (summary)
   return (
-    <>
-      <motion.div
-        layoutId={`card-${user.id}-${id}`}
-        className="p-3 flex items-center gap-3 rounded-xl border bg-card shadow-md cursor-pointer hover:bg-muted/40 transition"
-        onClick={() => router.push(`/protected/profile/${user.username}`)}
-      >
-        <Avatar className="size-10 flex-shrink-0">
+    <div
+      className={cn("relative bg-card rounded-xl shadow-lg border w-64 h-44 flex flex-col justify-between p-3 overflow-hidden min-w-[16rem] min-h-[11rem] max-w-[16rem] max-h-[11rem] cursor-pointer transition hover:ring-2 hover:ring-primary/40", className)}
+      onClick={() => router.push(`/protected/profile/${user.username || user.handle}`)}
+      tabIndex={0}
+      role="button"
+      aria-label={`View profile of ${user.username}`}
+    >
+      {/* Gender icon top right */}
+      <div className="absolute top-3 right-3 z-10 group select-none">
+        <div
+          className="flex items-center justify-center transition-colors cursor-pointer"
+          onMouseEnter={() => setGenderHover(true)}
+          onMouseLeave={() => setGenderHover(false)}
+          tabIndex={0}
+          aria-label={genderText}
+        >
+          {genderHover ? (
+            <span className="text-xs font-semibold px-2 py-1 bg-muted rounded transition-all">{genderText}</span>
+          ) : (
+            genderIcon
+          )}
+        </div>
+      </div>
+      {/* Top: Avatar + Username */}
+      <div className="flex items-center gap-3 mb-1">
+        <Avatar className="w-10 h-10">
           <AvatarImage src={user.avatarUrl} alt={user.username} />
           <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm truncate">{user.username}</div>
-          <div className="text-xs text-muted-foreground truncate">{user.branch}{user.height ? ` \u2022 ${user.height}` : ''}</div>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {user.interests.slice(0, 3).map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">{tag}</Badge>
-            ))}
-            {user.interests.length > 3 && (
-              <span className="text-xs text-muted-foreground">+{user.interests.length - 3} more</span>
-            )}
-          </div>
+        <span className="text-lg font-bold text-foreground truncate max-w-[8rem] flex items-center">
+          {user.username}
+          {user.email && user.email.endsWith("@thapar.edu") && (
+            <img src="/verify.png" alt="Verified" className="ml-1 align-middle inline-block" />
+          )}
+        </span>
+      </div>
+      {/* Bio */}
+      {user.bio && (
+        <div className="text-foreground text-xs truncate mb-1 max-w-full" title={user.bio}>{user.bio}</div>
+      )}
+      {/* Separator */}
+      <Separator className="my-1" />
+      {/* Height, Branch, Year row with vertical separators */}
+      <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs mb-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="font-medium truncate">{user.height || "-"}</span>
         </div>
-      </motion.div>
-      {/* Modal overlay */}
-      <AnimatePresence>
-        {modalOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/30 h-full w-full z-40"
-            />
-            <div className="fixed inset-0 grid place-items-center z-50">
-              <motion.div
-                layoutId={`card-${user.id}-${id}`}
-                ref={ref}
-                className="w-full max-w-[500px] h-full md:h-fit md:max-h-[90%] flex flex-col bg-card dark:bg-neutral-900 sm:rounded-3xl overflow-hidden shadow-2xl"
-              >
-                <div className="flex flex-col items-center p-6 pb-2">
-                  <Avatar className="size-20 mb-2">
-                    <AvatarImage src={user.avatarUrl} alt={user.username} />
-                    <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="font-bold text-lg mb-1">{user.username}</div>
-                  <div className="text-xs text-muted-foreground mb-1">{user.name}</div>
-                  <div className="text-xs text-muted-foreground mb-2">{user.branch}{user.height ? ` • ${user.height}` : ''}</div>
-                  <div className="flex flex-wrap gap-1 mb-2 justify-center">
-                    {user.interests.map((tag, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5">{tag}</Badge>
-                    ))}
-                  </div>
-                  <div className="text-sm mb-2 text-center whitespace-pre-line max-h-32 overflow-auto">{user.bio}</div>
-                </div>
-                <div className="flex flex-col gap-2 px-6 pb-6">
-                  {status === "loading" ? (
-                    <Button size="sm" className="w-full" disabled>Loading...</Button>
-                  ) : status === "none" ? (
-                    <Button size="sm" className="w-full" onClick={sendRequest}>Connect</Button>
-                  ) : status === "pending_sent" ? (
-                    <Button size="sm" className="w-full" variant="outline" disabled>Pending</Button>
-                  ) : status === "pending_received" ? (
-                    <>
-                      <Button size="sm" className="w-full" onClick={acceptRequest}>Accept</Button>
-                      <Button size="sm" className="w-full" variant="destructive" onClick={declineRequest}>Decline</Button>
-                    </>
-                  ) : status === "connected" ? (
-                    <Button size="sm" className="w-full" variant="secondary" disabled>Connected</Button>
-                  ) : null}
-                  {status === "pending_sent" && (
-                    <Button size="sm" variant="ghost" className="w-full" onClick={cancelRequest}>Cancel</Button>
-                  )}
-                  {error && <div className="text-xs text-red-500 mt-1 text-center">{error}</div>}
-                </div>
-                <button
-                  className="absolute top-4 right-4 flex items-center justify-center bg-white dark:bg-neutral-800 rounded-full h-8 w-8 z-10 shadow"
-                  onClick={() => setModalOpen(false)}
-                  aria-label="Close"
-                  type="button"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-black dark:text-white"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
-                </button>
-              </motion.div>
-            </div>
-          </>
+        <Separator orientation="vertical" className="h-4 mx-1" />
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="font-medium truncate">{user.branch || "-"}</span>
+        </div>
+        <Separator orientation="vertical" className="h-4 mx-1" />
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="font-medium truncate">{user.year || "-"}</span>
+        </div>
+      </div>
+      {/* Interests (max 3, 1 line, +N if more) */}
+      {user.interests && user.interests.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-1 max-w-full overflow-hidden">
+          {user.interests.slice(0, 3).map((tag: string, i: number) => (
+            <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5 truncate max-w-[5rem]">{tag}</Badge>
+          ))}
+          {user.interests.length > 3 && (
+            <Badge variant="secondary" className="text-xs px-2 py-0.5">+{user.interests.length - 3}</Badge>
+          )}
+        </div>
+      )}
+      {/* Connect button */}
+      <div className="flex flex-col gap-1 ">
+        <Button
+          size="sm"
+          className="w-full min-h-8 text-sm"
+          onClick={e => { e.stopPropagation(); sendRequest(); }}
+          disabled={status === 'pending_sent' || status === 'loading'}
+        >
+          {status === 'pending_sent' ? 'Pending' : status === 'loading' ? 'Connecting...' : 'Connect'}
+        </Button>
+        {status === "pending_sent" && (
+          <Button size="sm" variant="ghost" className="w-full" onClick={e => { e.stopPropagation(); cancelRequest(); }}>Cancel</Button>
         )}
-      </AnimatePresence>
-    </>
+        {error && <div className="text-xs text-red-500 text-center mt-1 truncate">{error}</div>}
+      </div>
+    </div>
   );
 }

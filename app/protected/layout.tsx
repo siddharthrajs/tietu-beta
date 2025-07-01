@@ -17,7 +17,7 @@ export default function DashboardLayout({
         >
           <Sidebar />
 
-          <main className="flex-1 rounded-2xl border shadow-lg p-6 h-full max-h-full overflow-auto">
+          <main className="flex-1 rounded-2xl border shadow-lg p-6 h-full overflow-auto">
             {children}
           </main>
         </ThemeProvider>

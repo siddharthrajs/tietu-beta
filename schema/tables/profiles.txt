@@ -1,0 +1,17 @@
+create table public.profiles (
+  id uuid not null,
+  email text not null,
+  handle text not null,
+  name text null,
+  avatar text null,
+  branch text null,
+  year text null,
+  gender text null,
+  bio text null,
+  interests text[] null,
+  is_verified boolean null default false,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint profiles_pkey primary key (id),
+  constraint profiles_handle_key unique (handle),
+  constraint profiles_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;

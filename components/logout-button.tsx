@@ -17,7 +17,7 @@ export function LogoutButton() {
   return (
     <Button onClick={logout} variant="ghost" className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-semibold w-full justify-start" asChild>
       <span>
-        <LogOut className="size-6 inline-block mr-2" /> Log out
+        <LogOut className="size-6 inline-block mr-2" />
       </span>
     </Button>
   )

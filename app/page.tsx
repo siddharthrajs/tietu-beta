@@ -1,19 +1,46 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+"use client"
 
-export default function Home() {
+import Hero from "@/components/Hero";
+import { Button } from "@/components/ui/button";
+import { Squares } from "@/components/ui/squares-background";
+import { NavBar } from "@/components/ui/tubelight-navbar";
+import { Home, User, Briefcase, ArrowRight } from 'lucide-react'
+
+const navItems = [
+  { name: "Home", url: "/", icon: Home },
+  { name: "About", url: "/", icon: User },
+  { name: "Contact", url: "/", icon: Briefcase },
+];
+
+
+export default function LandingPage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <h1 className="text-4xl font-bold">Tietu</h1>
-        <p className="text-lg">This is the Landing page</p>
-        <Link href="/auth/login">
-          <Button>Login</Button>
-        </Link>
-        <Link href="/auth/sign-up">
-          <Button>Sign Up</Button>
-        </Link>
-      </main>
+    <div className="h-screen relative overflow-hidden">
+      <NavBar items={navItems} />
+      {/* Background Squares */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Squares
+          direction="diagonal"
+          speed={0.25}
+          squareSize={60}
+          borderColor="#333"
+          hoverFillColor="#333"
+        />
+      </div>
+      {/* Hero Section */}
+      <div className="border-2 flex flex-col items-center transform mt-32 relative z-10">
+        <h1 className="text-5xl font-bold">UniCon</h1>
+        <p className="text-2xl">Meet minds before faces.</p>
+        <Button className="mt-4 flex items-center gap-2">
+          Get Started
+          <ArrowRight />
+        </Button>
+        {/* Dashboard Screenshot Placeholder */}
+        <div className="mt-8 w-[70vw] h-[40vw] max-w-5xl max-h-[60vh] flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg bg-gray-50 text-gray-500 text-lg font-semibold mx-auto">
+          Dashboard Screenshot Placeholder
+        </div>
+      </div>
     </div>
   );
 }
+

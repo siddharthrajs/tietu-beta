@@ -45,6 +45,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         },
       })
       if (error) throw error
+      // Store email in localStorage for OTP verification
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('signup_email', email)
+      }
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
