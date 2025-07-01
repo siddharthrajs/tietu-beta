@@ -1,65 +1,42 @@
-import React from 'react'
-import { ProfileCard } from '@/components/profile-card'
-
-const profiles = [
-  {
-    avatarUrl: '/avatar1.png',
-    username: 'kladenstien',
-    bio: 'I am a software engineer',
-    height: '180cm',
-    branch: 'CSE',
-    interests: ['Coding', 'Gaming', 'Traveling']
-  },
-  {
-    avatarUrl: '/avatar2.png',
-    username: 'randomUser',
-    bio: 'I am a photographer',
-    height: '175cm',
-    branch: 'EEE',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar3.png',
-    username: 'randomUser',
-    bio: 'I am a designer',
-    height: '175cm',
-    branch: 'ME',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar4.png',
-    username: 'randomUser',
-    bio: 'I am a musician',
-    height: '175cm',
-    branch: 'CE',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar5.png',
-    username: 'randomUser',
-    bio: 'I am a chef',
-    height: '175cm',
-    branch: 'CHE',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar6.png',
-    username: 'randomUser',
-    bio: 'I am a traveler',
-    height: '175cm',
-    branch: 'Mechanical Engineering',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-]
+"use client";
+import React, { useEffect, useState } from 'react';
+import { ProfileCard } from '@/components/profile-card';
+import { createClient } from '@/lib/client';
 
 const Friends = () => {
+  const [profiles, setProfiles] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .neq('id', (await supabase.auth.getUser()).data.user?.id); // Exclude self
+      if (data) setProfiles(data);
+    };
+    fetchProfiles();
+  }, []);
+
   return (
     <div className="flex flex-wrap gap-6 p-6 justify-center">
-      {profiles.map((profile, idx) => (
-        <ProfileCard user={profile} key={idx} />
+      {profiles.map((profile: any, idx: number) => (
+        <ProfileCard
+          key={profile.id || idx}
+          user={{
+            id: profile.id,
+            avatarUrl: profile.avatar || '/avatar.png',
+            username: profile.handle || 'unknown',
+            bio: profile.bio || '',
+            height: profile.height || '',
+            branch: profile.branch || '',
+            interests: profile.interests ? (Array.isArray(profile.interests) ? profile.interests : profile.interests.split(',')) : [],
+          }}
+        />
       ))}
     </div>
-  )
-}
+  );
+};
 
-export default Friends
+export default Friends;
+

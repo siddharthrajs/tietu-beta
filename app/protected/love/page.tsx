@@ -1,65 +1,69 @@
-import React from 'react'
-import { ProfileCard } from '@/components/profile-card'
+"use client"
+import React, { useEffect, useState } from 'react';
+import { ProfileCard } from '@/components/profile-card';
+import { createClient } from '@/lib/client';
 
-const profiles = [
-  {
-    avatarUrl: '/avatar1.png',
-    username: 'kladenstien',
-    bio: 'I am a software engineer',
-    height: '180cm',
-    branch: 'CSE',
-    interests: ['Coding', 'Gaming', 'Traveling']
-  },
-  {
-    avatarUrl: '/avatar2.png',
-    username: 'randomUser',
-    bio: 'I am a photographer',
-    height: '175cm',
-    branch: 'EEE',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar3.png',
-    username: 'randomUser',
-    bio: 'I am a designer',
-    height: '175cm',
-    branch: 'ME',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar4.png',
-    username: 'randomUser',
-    bio: 'I am a musician',
-    height: '175cm',
-    branch: 'CE',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar5.png',
-    username: 'randomUser',
-    bio: 'I am a chef',
-    height: '175cm',
-    branch: 'CHE',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-  {
-    avatarUrl: '/avatar6.png',
-    username: 'randomUser',
-    bio: 'I am a traveler',
-    height: '175cm',
-    branch: 'Mechanical Engineering',
-    interests: ['Photography', 'Hiking', 'Cooking']
-  },
-]
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 const Love = () => {
-  return (
-    <div className="flex flex-wrap gap-6 p-6 justify-center">
-      {profiles.map((profile, idx) => (
-        <ProfileCard user={profile} key={idx} />
-      ))}
-    </div>
-  )
-}
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [gender, setGender] = useState<'all' | 'male' | 'female'>('all');
 
-export default Love
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const supabase = createClient();
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .neq('id', (await supabase.auth.getUser()).data.user?.id); // Exclude self
+      if (gender !== 'all') {
+        query = query.eq('gender', gender);
+      }
+      const { data, error } = await query;
+      if (data) setProfiles(data);
+    };
+    fetchProfiles();
+  }, [gender]);
+
+  return (
+    <div>
+      <div className="flex items-center gap-4 mb-6 justify-center">
+        <Label htmlFor="gender-switch">Show only Female</Label>
+        <Switch
+          id="gender-switch"
+          checked={gender === 'female'}
+          onCheckedChange={(checked) => setGender(checked ? 'female' : 'all')}
+        />
+        <Label htmlFor="gender-switch">Show only Male</Label>
+        <Switch
+          id="gender-switch-male"
+          checked={gender === 'male'}
+          onCheckedChange={(checked) => setGender(checked ? 'male' : 'all')}
+        />
+        <Button size="sm" variant="outline" onClick={() => setGender('all')} disabled={gender === 'all'}>
+          Show All
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-6 p-6 justify-center">
+        {profiles.map((profile: any, idx: number) => (
+          <ProfileCard
+            key={profile.id || idx}
+            user={{
+              id: profile.id,
+              avatarUrl: profile.avatar || '/avatar.png',
+              username: profile.handle || 'unknown',
+              bio: profile.bio || '',
+              height: profile.height || '',
+              branch: profile.branch || '',
+              interests: profile.interests ? (Array.isArray(profile.interests) ? profile.interests : profile.interests.split(',')) : [],
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Love;

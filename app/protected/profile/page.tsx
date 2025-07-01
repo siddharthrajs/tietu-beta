@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import React, { useEffect, useState } from 'react'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,197 +9,257 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Pencil, CheckCircle2, User2, Heart, Users, Eye, Lock, Edit3 } from 'lucide-react'
+import { createClient } from '@/lib/client'
 
-const mockProfile = {
-  avatarUrl: '/avatar.png',
-  username: 'siddharth',
-  isVerified: true,
-  handle: '@siddharth',
-  year: '3rd Year',
-  branch: 'CSE',
-  gender: 'Male',
-  height: '180cm',
-  bio: 'I love building cool stuff! 🚀 Let\'s connect and create something awesome together.',
-  bioPublic: true,
-  interests: ['Anime', 'AI', 'Startups', 'Coding', 'Music', 'Travel', 'Chess', 'Photography', 'Gaming', 'Reading'],
-  preferences: {
-    lookingFor: ['❤️', '🤝'],
-    genderPref: 'Any',
-    sameBranch: false,
-    sameYear: false,
-  },
-  stats: {
-    connections: 8,
-    likesSent: 24,
-    likesReceived: 42,
-    collabs: 3,
-    views: 120,
-  },
-  privacy: {
-    email: false,
-    phone: false,
-    height: true,
-    bio: true,
-    visibility: 'Public',
-  },
+const defaultProfile = {
+  avatar: '/avatar.png',
+  handle: '',
+  name: '',
+  email: '',
+  branch: '',
+  year: '',
+  gender: '',
+  bio: '',
+  interests: [],
+  is_verified: false,
 }
 
 const Profile = () => {
-  const [bio, setBio] = useState(mockProfile.bio)
-  const [bioPublic, setBioPublic] = useState(mockProfile.bioPublic)
-  const [interests, setInterests] = useState(mockProfile.interests)
-  const [privacy, setPrivacy] = useState(mockProfile.privacy)
-  const [isOwnProfile] = useState(true) // toggle for demo
+  const [profile, setProfile] = useState<any>(defaultProfile)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (profileError) throw profileError
+        if (!data) {
+          setProfile({ ...defaultProfile, email: user.email, handle: '', name: '' })
+        } else {
+          setProfile({ ...defaultProfile, ...data })
+        }
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProfile()
+  }, [])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setProfile((prev: any) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setProfile((prev: any) => ({ ...prev, [name]: value }))
+  }
+
+  const handleInterestsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfile((prev: any) => ({ ...prev, interests: e.target.value.split(',').map((i) => i.trim()) }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const email = user.email ?? '';
+      const updateData = { ...profile, id: user.id, email, is_verified: email.endsWith('@thapar.edu') }
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert(updateData)
+      if (updateError) throw updateError
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <div className="flex justify-center items-center min-h-screen">Loading profile...</div>
+  if (error) return <div className="text-destructive text-center mt-8">{error}</div>
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-8 py-8">
+    <div className="max-w-3xl mx-auto flex flex-col gap-8 py-8 relative">
       {/* Top Section */}
       <Card className="p-6 flex flex-col items-center gap-4">
         <div className="relative">
           <Avatar className="size-28">
-            <AvatarImage src={mockProfile.avatarUrl} alt={mockProfile.username} />
-            <AvatarFallback>{mockProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={profile.avatar || '/avatar.png'} alt={profile.handle} />
+            <AvatarFallback>{profile.handle?.charAt(0)?.toUpperCase() || '?'}</AvatarFallback>
           </Avatar>
-          {isOwnProfile && (
-            <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 rounded-full shadow-md">
-              <Pencil className="size-5" />
-            </Button>
-          )}
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold">{mockProfile.username}</span>
-            {mockProfile.isVerified && (
-              <CheckCircle2 className="text-primary size-5" />
+        <div className="flex flex-col items-center gap-1 w-full">
+          <div className="flex items-center gap-2 w-full justify-center">
+            <span className="text-2xl font-bold">{profile.name}</span>
+            {profile.is_verified && (
+              <span title="Verified @thapar.edu">
+                <CheckCircle2 className="text-primary size-5" />
+              </span>
             )}
           </div>
-          <span className="text-muted-foreground">{mockProfile.handle}</span>
-          <span className="text-sm text-muted-foreground">{mockProfile.year}, {mockProfile.branch}</span>
-          <div className="flex gap-2 mt-1">
-            <span className="text-xs text-muted-foreground">{mockProfile.gender}</span>
-            {privacy.height && <span className="text-xs text-muted-foreground">• {mockProfile.height}</span>}
+          <div className="flex flex-col md:flex-row gap-2 w-full justify-center items-center mt-2">
+            <span className="text-muted-foreground">@{profile.handle}</span>
+            <span className="text-sm text-muted-foreground">{profile.email}</span>
           </div>
-        </div>
-        {isOwnProfile && (
-          <Button variant="outline" className="mt-2"><Edit3 className="size-4 mr-2" /> Edit Profile</Button>
-        )}
-      </Card>
-
-      {/* Bio Section */}
-      <Card className="p-6 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <CardTitle>Bio</CardTitle>
-          <div className="flex items-center gap-2">
-            <Switch checked={bioPublic} onCheckedChange={setBioPublic} />
-            <span className="text-xs text-muted-foreground">{bioPublic ? 'Public' : 'Private'}</span>
+          <div className="flex flex-col md:flex-row gap-2 w-full justify-center items-center mt-2">
+            <span className="text-sm text-muted-foreground">{profile.branch}</span>
+            <span className="text-sm text-muted-foreground">{profile.year}</span>
+            <span className="text-xs text-muted-foreground">{profile.gender}</span>
           </div>
-        </div>
-        <Textarea
-          value={bio}
-          onChange={e => setBio(e.target.value)}
-          maxLength={200}
-          rows={3}
-          className="resize-none"
-          disabled={!isOwnProfile}
-        />
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Emoji supported</span>
-          <span>{bio.length}/200</span>
         </div>
       </Card>
 
-      {/* Interests Section */}
-      <Card className="p-6 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <CardTitle>Interests</CardTitle>
-          {isOwnProfile && <Button size="sm" variant="secondary">Edit</Button>}
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {interests.slice(0, 10).map((tag, idx) => (
-            <Badge key={idx} variant="secondary">#{tag}</Badge>
-          ))}
-        </div>
-      </Card>
-
-      {/* Connection Preferences */}
-      <Card className="p-6 flex flex-col gap-4">
-        <CardTitle>Connection Preferences</CardTitle>
-        <div className="flex gap-4 flex-wrap">
-          <Badge variant="outline" className="flex items-center gap-1 text-base">
-            <Heart className="size-4 text-pink-500" /> Looking for Love
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1 text-base">
-            <Users className="size-4 text-blue-500" /> Collaborate
-          </Badge>
-        </div>
-        <div className="flex gap-6 flex-wrap mt-2">
-          <span className="text-sm">Gender Preference: <b>{mockProfile.preferences.genderPref}</b></span>
-          <span className="text-sm">Same Branch: <b>{mockProfile.preferences.sameBranch ? 'Yes' : 'No'}</b></span>
-          <span className="text-sm">Same Year: <b>{mockProfile.preferences.sameYear ? 'Yes' : 'No'}</b></span>
-        </div>
-      </Card>
-
-      {/* Activity Stats */}
-      <Card className="p-6 flex flex-col gap-3">
-        <CardTitle>Activity Stats</CardTitle>
-        <div className="flex gap-6 flex-wrap mt-2">
-          <span className="flex items-center gap-2"><User2 className="size-4" /> Connections: <b>{mockProfile.stats.connections}</b></span>
-          <span className="flex items-center gap-2"><Heart className="size-4" /> Likes Sent: <b>{mockProfile.stats.likesSent}</b></span>
-          <span className="flex items-center gap-2"><Heart className="size-4 text-pink-500" /> Likes Received: <b>{mockProfile.stats.likesReceived}</b></span>
-          <span className="flex items-center gap-2"><Users className="size-4" /> Collabs: <b>{mockProfile.stats.collabs}</b></span>
-          <span className="flex items-center gap-2"><Eye className="size-4" /> Profile Views: <b>{mockProfile.stats.views}</b></span>
-        </div>
-      </Card>
-
-      {/* Privacy Controls */}
-      <Card className="p-6 flex flex-col gap-3">
-        <CardTitle>Privacy Controls</CardTitle>
-        <div className="flex flex-wrap gap-6 mt-2">
-          <div className="flex items-center gap-2">
-            <Switch checked={privacy.email} onCheckedChange={v => setPrivacy(p => ({ ...p, email: v }))} />
-            <span className="text-sm">Show Email</span>
+      {/* Editable Profile Fields */}
+      <Card className="p-6 flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">Name</label>
+            <Input
+              type="text"
+              name="name"
+              value={profile.name}
+              onChange={handleChange}
+              placeholder="Name"
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={privacy.phone} onCheckedChange={v => setPrivacy(p => ({ ...p, phone: v }))} />
-            <span className="text-sm">Show Phone</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={privacy.height} onCheckedChange={v => setPrivacy(p => ({ ...p, height: v }))} />
-            <span className="text-sm">Show Height</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={privacy.bio} onCheckedChange={v => setPrivacy(p => ({ ...p, bio: v }))} />
-            <span className="text-sm">Show Bio</span>
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">@Handle</label>
+            <Input
+              type="text"
+              name="handle"
+              value={profile.handle}
+              onChange={handleChange}
+              placeholder="@handle"
+            />
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-sm">Visibility:</span>
-          <select
-            className="border rounded px-2 py-1 bg-background text-foreground"
-            value={privacy.visibility}
-            onChange={e => setPrivacy(p => ({ ...p, visibility: e.target.value }))}
-          >
-            <option value="Public">Public</option>
-            <option value="College Only">College Only</option>
-            <option value="Private">Private</option>
-          </select>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">Email</label>
+            <Input
+              type="email"
+              name="email"
+              value={profile.email}
+              onChange={handleChange}
+              placeholder="Email"
+              disabled
+            />
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">Avatar URL</label>
+            <Input
+              type="text"
+              name="avatar"
+              value={profile.avatar}
+              onChange={handleChange}
+              placeholder="Avatar URL"
+            />
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">Branch</label>
+            <select
+              name="branch"
+              value={profile.branch}
+              onChange={handleSelectChange}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">Branch</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="EE">EE</option>
+              <option value="ME">ME</option>
+              <option value="CE">CE</option>
+              <option value="CHE">CHE</option>
+              <option value="BT">BT</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">Year</label>
+            <select
+              name="year"
+              value={profile.year}
+              onChange={handleSelectChange}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">Year</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div className="flex-1 flex flex-col gap-2">
+            <label className="font-semibold">Gender</label>
+            <select
+              name="gender"
+              value={profile.gender}
+              onChange={handleSelectChange}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="font-semibold">Bio</label>
+          <Textarea
+            name="bio"
+            value={profile.bio}
+            onChange={handleChange}
+            maxLength={200}
+            rows={3}
+            className="resize-none"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Emoji supported</span>
+            <span>{profile.bio.length}/200</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="font-semibold">Interests</label>
+          <Input
+            name="interests"
+            value={profile.interests?.join(', ') || ''}
+            onChange={handleInterestsChange}
+            placeholder="e.g. Coding, Music, AI"
+          />
+          <div className="flex flex-wrap gap-2 mt-2">
+            {profile.interests?.length > 0 ? profile.interests.slice(0, 10).map((tag: string, idx: number) => (
+              <Badge key={idx} variant="secondary">#{tag}</Badge>
+            )) : <span className="text-muted-foreground">No interests added.</span>}
+          </div>
         </div>
       </Card>
-
-      {/* Connected Projects/Dates (Optional) */}
-      <Card className="p-6 flex flex-col gap-3">
-        <CardTitle>Connected Projects / Dates</CardTitle>
-        <div className="flex gap-4 flex-wrap mt-2">
-          <Card className="min-w-[160px] p-3 flex flex-col items-center gap-2 bg-muted/70">
-            <CardTitle className="text-base">Dinner Date</CardTitle>
-            <CardDescription>❤️ 2nd July, 7PM</CardDescription>
-          </Card>
-          <Card className="min-w-[160px] p-3 flex flex-col items-center gap-2 bg-muted/70">
-            <CardTitle className="text-base">Hackathon</CardTitle>
-            <CardDescription>🤝 Ongoing</CardDescription>
-          </Card>
-        </div>
-      </Card>
+      {/* Save Button at bottom right */}
+      <div className="flex justify-end sticky bottom-4 z-10 mt-4">
+        <Button onClick={handleSave} disabled={saving} className="w-40">
+          {saving ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -7,8 +7,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-background via-muted/60 to-background flex items-start justify-center">
-      <div className="flex w-full max-w-[1600px] py-12 pl-8 pr-8 gap-8">
+    <div className="h-screen w-full flex items-start justify-center overflow-hidden">
+      <div className="flex w-full max-w-[1600px] h-screen py-12 pl-8 pr-8 gap-8 border overflow-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -17,7 +17,7 @@ export default function DashboardLayout({
         >
           <Sidebar />
 
-          <main className="flex-1 rounded-2xl bg-card shadow-lg p-6 min-h-[80vh]">
+          <main className="flex-1 rounded-2xl border shadow-lg p-6 h-full max-h-full overflow-auto">
             {children}
           </main>
         </ThemeProvider>
