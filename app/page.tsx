@@ -1,6 +1,5 @@
 "use client"
 
-import Hero from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Squares } from "@/components/ui/squares-background";
 import { NavBar } from "@/components/ui/tubelight-navbar";

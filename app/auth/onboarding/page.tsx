@@ -99,8 +99,12 @@ export default function OnboardingForm() {
       })
       if (error) throw error
       router.push('/protected/home')
-    } catch (err: any) {
-      setFormError(err.message || 'Failed to save profile')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setFormError(err.message)
+      } else {
+        setFormError('Failed to save profile')
+      }
     } finally {
       setLoading(false)
     }

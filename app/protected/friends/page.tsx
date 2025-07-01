@@ -4,23 +4,23 @@ import { ProfileCard } from '@/components/profile-card';
 import { createClient } from '@/lib/client';
 
 const Friends = () => {
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<unknown[]>([]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, handle, name, avatar')
         .neq('id', (await supabase.auth.getUser()).data.user?.id); // Exclude self
-      if (data) setProfiles(data);
+      setProfiles((data as unknown[]) || []);
     };
     fetchProfiles();
   }, []);
 
   return (
     <div className="flex flex-wrap gap-6 p-6 justify-center">
-      {profiles.map((profile: any, idx: number) => (
+      {profiles.map((profile: unknown, idx: number) => (
         <ProfileCard
           key={profile.id || idx}
           user={{

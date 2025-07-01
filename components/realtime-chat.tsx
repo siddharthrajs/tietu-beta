@@ -21,6 +21,16 @@ interface RealtimeChatProps {
   messages?: ChatMessage[]
 }
 
+// Message type based on @/tables/messages.txt
+interface Message {
+  id: string;
+  room: string;
+  sender_id: string | null;
+  content: string;
+  created_at: string;
+  sender_name: string | null;
+}
+
 /**
  * Realtime chat component
  * @param roomName - The name of the room to join. Each room is a unique chat.

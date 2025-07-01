@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 
 const Connections = () => {
-  const [connections, setConnections] = useState<any[]>([])
+  const [connections, setConnections] = useState<unknown[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter();
+  const [profiles, setProfiles] = useState<unknown[]>([])
 
   useEffect(() => {
     const fetchConnections = async () => {
@@ -28,7 +29,7 @@ const Connections = () => {
         if (connError) throw connError
         // Get the other user ids
         const otherUserIds = conns.map((c: any) => c.user1_id === user.id ? c.user2_id : c.user1_id)
-        let profiles: any[] = []
+        let profiles: unknown[] = []
         if (otherUserIds.length > 0) {
           const { data } = await supabase.from('profiles').select('id, handle, name, avatar').in('id', otherUserIds)
           profiles = data || []

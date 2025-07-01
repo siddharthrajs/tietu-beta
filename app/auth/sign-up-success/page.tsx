@@ -39,8 +39,12 @@ export default function Page() {
       // Remove email from localStorage after successful verification
       localStorage.removeItem('signup_email')
       router.push('/auth/onboarding')
-    } catch (err: any) {
-      setError('OTP verification failed')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('OTP verification failed')
+      }
     } finally {
       setLoading(false)
     }

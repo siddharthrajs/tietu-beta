@@ -17,12 +17,11 @@ type ProfileCardProps = {
   className?: string;
 };
 
-import React, { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bookmark, MessageCircle, Mars, Venus } from "lucide-react";
+import { Mars, Venus } from "lucide-react";
 import { createClient } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -132,32 +131,6 @@ export function ProfileCard({ user, className = "" }: ProfileCardProps) {
     if (error) {
       setError("Failed to cancel");
       setStatus("pending_sent");
-    } else {
-      setStatus("none");
-    }
-  };
-  const acceptRequest = async () => {
-    setStatus("loading");
-    setError(null);
-    const supabase = createClient();
-    if (!connId) return;
-    const { error } = await supabase.from('connections').update({ type: 'accepted' }).eq('id', connId);
-    if (error) {
-      setError("Failed to accept");
-      setStatus("pending_received");
-    } else {
-      setStatus("connected");
-    }
-  };
-  const declineRequest = async () => {
-    setStatus("loading");
-    setError(null);
-    const supabase = createClient();
-    if (!connId) return;
-    const { error } = await supabase.from('connections').update({ type: 'declined' }).eq('id', connId);
-    if (error) {
-      setError("Failed to decline");
-      setStatus("pending_received");
     } else {
       setStatus("none");
     }

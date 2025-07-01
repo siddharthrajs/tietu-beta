@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import Link from "next/link"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { Button } from "./button"
 
 interface NavItem {
@@ -21,11 +20,10 @@ interface NavBarProps {
 
 export function NavBar({ items, className }: NavBarProps) {
   const [activeTab, setActiveTab] = useState(items[0].name)
-  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
+      // This function is now empty as the isMobile variable is removed
     }
 
     handleResize()
